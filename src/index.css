@@ -25,10 +25,11 @@
   }
 
   .markdown-content table {
-    @apply w-full border-collapse my-2 text-xs;
+    @apply w-full border-collapse my-2 text-[11px] sm:text-xs leading-normal;
   }
   .markdown-content th, .markdown-content td {
-    @apply border border-slate-200 p-2 text-left;
+    @apply border border-slate-200 p-2 text-left align-middle;
+    min-width: 80px;
   }
   .markdown-content th {
     @apply bg-slate-50 font-bold;

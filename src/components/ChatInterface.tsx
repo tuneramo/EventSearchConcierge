@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, User, Bot, Loader2, Calendar, Search, Sparkles } from 'lucide-react';
+import { Send, User, Bot, Loader2, Calendar, Search, Sparkles, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { chatWithConcierge } from '../lib/gemini';
@@ -9,6 +9,26 @@ interface Message {
   role: 'user' | 'model';
   content: string;
 }
+
+const CopyButton = ({ text }: { text: string }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-700 transition-all active:scale-95 flex-shrink-0 shadow-sm"
+    >
+      {copied ? <Check size={12} /> : <Copy size={12} />}
+      {copied ? 'Copied' : 'URLをコピーする'}
+    </button>
+  );
+};
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
@@ -92,7 +112,28 @@ export default function ChatInterface() {
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />
+                        a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />,
+                        td: ({ node, children, ...props }) => {
+                          // Simple detection: if the text in the cell looks like a URL
+                          const getCellText = (nodes: any): string => {
+                            if (typeof nodes === 'string') return nodes;
+                            if (Array.isArray(nodes)) return nodes.map(getCellText).join('');
+                            if (nodes && nodes.props && nodes.props.children) return getCellText(nodes.props.children);
+                            return '';
+                          };
+                          
+                          const textContent = getCellText(children).trim();
+                          const isUrl = textContent.startsWith('http');
+
+                          return (
+                            <td {...props}>
+                              <div className={isUrl ? "flex flex-col md:flex-row md:items-center gap-2" : ""}>
+                                <div className="flex-1 break-all">{children}</div>
+                                {isUrl && <CopyButton text={textContent} />}
+                              </div>
+                            </td>
+                          );
+                        }
                       }}
                     >
                       {msg.content}
