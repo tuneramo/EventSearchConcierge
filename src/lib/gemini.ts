@@ -1,10 +1,27 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Netlify/Vite compatibility: handle environment variables safely in the browser
+const getApiKey = () => {
+  try {
+    return import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : '');
+  } catch (e) {
+    return '';
+  }
+};
+
+const GEMINI_KEY = getApiKey();
+let ai: any = null;
+
+if (GEMINI_KEY) {
+  ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
+}
 
 export const model = "gemini-3-flash-preview";
 
 export async function chatWithConcierge(messages: { role: 'user' | 'model', content: string }[]) {
+  if (!ai) {
+    return "APIキーが設定されていないか、読み込みに失敗しました。Netlifyの環境変数 (Environment variables) で `VITE_GEMINI_API_KEY` を設定してください。設定後、再デプロイが必要です。";
+  }
   const systemInstruction = `
 あなたは優秀なリサーチャーであり、ユーザーに最適なセミナー・ウェビナー・イベントを紹介する「イベント検索コンシェルジュ」です。
 豊富な知識と丁寧なヒアリング力で、情報過多に悩むユーザーをサポートします。
